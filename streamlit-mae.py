@@ -95,8 +95,8 @@ query_text = st.text_input(
 
 # Load embeddings
 persist_directory = 'db'
-# embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+# embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
 vectordb = load_chroma_db(persist_directory, embedding)
 
 # Form input and query
