@@ -82,8 +82,8 @@ def generate_response_db(query_text):
         return result
 
 
-st.title('Exam Bot :sunglasses:')
-st.header('_Master of Advertising Effectiveness_')
+st.title('_Master of Advertising Effectiveness_')
+st.subheader('Exam Bot :sunglasses:')
 st.divider()
 
 st.subheader("Question")
