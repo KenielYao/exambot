@@ -85,8 +85,7 @@ def generate_response_db(query_text):
     return result
 
 
-st.title('Exam Bot :sunglasses:')
-st.subheader('_Master of Advertising Effectiveness_')
+st.title('Master of Advertising Effectiveness: Exam Bot :sunglasses:')
 st.divider()
 
 st.subheader("Question")
@@ -95,6 +94,7 @@ query_text = st.text_input(
     label_visibility="collapsed",
     placeholder='e.g. What is Future Demand?'
 )
+st.caption("To get the best response, make your question as specific as possible.")
 
 # Load embeddings
 persist_directory = 'db'
@@ -117,7 +117,7 @@ if len(result):
     st.subheader("Answer")
     st.info(response["result"])
     
-    with st.expander("**See sources**"):
+    with st.expander("Answers aren't always reliable. Click below to see which lecture notes Exambot referenced."):
         for document in response["source_documents"]:
             st.text(document.metadata["source"])
             st.info(document.page_content)
