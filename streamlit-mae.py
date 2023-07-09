@@ -40,7 +40,7 @@ prompt = PromptTemplate(
 @st.cache_resource
 def load_chroma_db(persist_directory, _embedding):
     
-    if os.path.isfile('./db/index/*.pkl'):
+    if os.path.exists('./db/index/'):
         vectordb = Chroma(
             persist_directory=persist_directory, 
             embedding_function=_embedding
@@ -82,8 +82,8 @@ def generate_response_db(query_text):
         return result
 
 
-st.title('_Master of Advertising Effectiveness_')
-st.subheader('Exam Bot :sunglasses:')
+st.title('Exam Bot :sunglasses:')
+st.subheader('_Master of Advertising Effectiveness_')
 st.divider()
 
 st.subheader("Question")
