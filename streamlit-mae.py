@@ -69,17 +69,20 @@ def load_chroma_db(persist_directory, _embedding):
 
 
 def generate_response_db(query_text):
-    if query_text is not None:
-        qa = RetrievalQA.from_chain_type(
-            llm=llm,
-            chain_type='stuff',
-            retriever=vectordb.as_retriever(),
-            chain_type_kwargs={"prompt": prompt},
-            return_source_documents=True
-        )
+    qa = RetrievalQA.from_chain_type(
+        llm=llm,
+        chain_type='stuff',
+        retriever=vectordb.as_retriever(),
+        chain_type_kwargs={"prompt": prompt},
+        return_source_documents=True
+    )
+    
+    try:
         result = qa({"query": query_text})
+    except ValueError:
+        result = {result: "It's taking longer than expected to load. Please try again in a few seconds..."}
         
-        return result
+    return result
 
 
 st.title('Exam Bot :sunglasses:')
@@ -114,7 +117,7 @@ if len(result):
     st.subheader("Answer")
     st.info(response["result"])
     
-    with st.expander("*See sources"):
+    with st.expander("**See sources**"):
         for document in response["source_documents"]:
             st.text(document.metadata["source"])
             st.info(document.page_content)
