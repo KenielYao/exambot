@@ -82,7 +82,9 @@ def generate_response_db(query_text):
         return result
 
 
-st.title('Masters of Advertising: Exam Bot :sunglasses:')
+st.title('Exam Bot :sunglasses:')
+st.header('_Master of Advertising Effectiveness_')
+st.divider()
 
 st.subheader("Question")
 query_text = st.text_input(
@@ -112,7 +114,7 @@ if len(result):
     st.subheader("Answer")
     st.info(response["result"])
     
-    with st.expander("**See sources**"):
+    with st.expander("*See sources"):
         for document in response["source_documents"]:
             st.text(document.metadata["source"])
             st.info(document.page_content)
