@@ -1,6 +1,7 @@
-streamlit
-langchain
-chromadb
-tiktoken
-sentence_transformers
-huggingface_hub
+streamlit=1.24.1
+langchain==0.0.139
+chromadb==0.3.26
+tiktoken==0.3.3
+sentence_transformers==2.2.2
+huggingface_hub==0.16.4
+typing_extensions==4.5.0
