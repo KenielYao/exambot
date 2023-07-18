@@ -1,5 +1,10 @@
 import os
+from typing import List
+import string
+import requests
+
 import streamlit as st
+
 from langchain.document_loaders import DirectoryLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.llms import HuggingFaceEndpoint
@@ -7,6 +12,20 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
+
+from langchain.retrievers import BM25Retriever, MergerRetriever
+
+def get_stopwords_array(url):
+    response = requests.get(url)
+    response.raise_for_status()
+
+    stopwords_text = response.text
+    stopwords_array = stopwords_text.split('\n')
+
+    return stopwords_array
+
+stopwords_url = 'https://raw.githubusercontent.com/stopwords-iso/stopwords-en/master/stopwords-en.txt'
+stopwords_array = get_stopwords_array(stopwords_url)
 
 HUGGINGFACE_API_KEY = st.secrets["huggingface_api_key"]
 
@@ -36,9 +55,40 @@ prompt = PromptTemplate(
     template=template
 )
 
+def custom_preprocessing_func(text: str) -> List[str]:
+    
+    words = text.lower().split()
+    
+    # Remove stopwords
+    words = [word for word in words if word not in stopwords_array]
+    
+    # Remove punctuation
+    words = [word for word in words if word not in string.punctuation]
+    
+    # Remove remaining non-alphabetic tokens
+    words = [word for word in words if word.isalpha()]
+
+    return words
+
+@st.cache_resource()
+def generate_documents_from_directory():
+    loader = DirectoryLoader(
+        './transcripts/',
+        glob="*.txt",
+        loader_cls=TextLoader
+    )
+    documents = loader.load()
+
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200
+    )
+    documents = text_splitter.split_documents(documents)
+    
+    return documents
 
 @st.cache_resource
-def load_chroma_db(persist_directory, _embedding):
+def load_chroma_db(persist_directory, _embedding, _documents):
     
     if os.path.exists('./db/index/'):
         vectordb = Chroma(
@@ -46,33 +96,38 @@ def load_chroma_db(persist_directory, _embedding):
             embedding_function=_embedding
         )
     else:
-        loader = DirectoryLoader(
-            './transcripts/',
-            glob="*.txt",
-            loader_cls=TextLoader
-        )
-        documents = loader.load()
-
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200
-        )
-        texts = text_splitter.split_documents(documents)
-
         vectordb = Chroma.from_documents(
-            documents=texts,
+            documents=_documents,
             embedding=_embedding,
             persist_directory=persist_directory
         )
         
     return vectordb
 
+@st.cache_resource
+def load_bm25(persist_directory, _documents, should_preprocess):
+        
+    if should_preprocess:
+        bm25 = BM25Retriever.from_documents(_documents, preprocess_func = custom_preprocessing_func)
+    else:
+        bm25 = BM25Retriever.from_documents(_documents)
+
+    return bm25
+
 
 def generate_response_db(query_text):
+    
+    lotr = MergerRetriever(retrievers=[
+        chroma_mini.as_retriever(),
+        retriever_bm25
+    ]) 
+    # MergerRetriever's get_documents method doesn't do anything special 
+    # Merging just combines all documents without deduplication
+    
     qa = RetrievalQA.from_chain_type(
         llm=llm,
         chain_type='stuff',
-        retriever=vectordb.as_retriever(),
+        retriever=lotr,
         chain_type_kwargs={"prompt": prompt},
         return_source_documents=True
     )
@@ -97,10 +152,15 @@ query_text = st.text_input(
 st.caption("To get the best response, make your question as specific as possible.")
 
 # Load embeddings
+documents = generate_documents_from_directory()
 persist_directory = 'db'
-embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-# embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
-vectordb = load_chroma_db(persist_directory, embedding)
+embed_mini = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+# all_mpnet = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+chroma_mini = load_chroma_db(persist_directory, embed_mini, documents)
+
+should_preprocess = True
+retriever_bm25 = load_bm25(persist_directory, documents, should_preprocess)
+
 
 # Form input and query
 result = []
