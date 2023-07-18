@@ -34,18 +34,25 @@ llm = HuggingFaceEndpoint(
     huggingfacehub_api_token=HUGGINGFACE_API_KEY,
     task="text-generation",
     model_kwargs={
-        "min_length": 200, # 200
-        "max_length": 1000, # 2000
-        "temperature": 0.4, # 0.2
-        "max_new_tokens": 300, # 200
+        "temperature": 0.3, # 0.2 - 0.4
+        "repetition_penalty": 1.2, # 1.2 recommended, >1 discourages repetition
+        "encoder_repetition_penalty": 1.2,
+        # new_tokens = tokens used, excluding the prompt and context
+        "min_new_tokens": 50,
+        "max_new_tokens": 250, 
+        "length_penalty": 0, # > 0 = longer, < 0 = shorter
         "num_return_sequences": 1
     }
 )
 
 template = """
-    Answer the question as truthfully as possible using the provided text. 
-    If the answer is not contained within the text below, say "I don't know"
     Context:{context}
+    
+    You are a marketing professor responding to student questions on the 
+    evidence of advertising effectiveness. Answer the question as truthfully as 
+    possible using the context provided above. 
+    If the answer is not contained within the text below, say "I don't know."
+    
     >>QUESTION<<{question}
     >>ANSWER<<
 """.strip()
@@ -80,7 +87,7 @@ def generate_documents_from_directory():
     documents = loader.load()
 
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
+        chunk_size=400, # 1000
         chunk_overlap=200
     )
     documents = text_splitter.split_documents(documents)
