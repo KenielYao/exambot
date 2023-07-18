@@ -34,10 +34,10 @@ llm = HuggingFaceEndpoint(
     huggingfacehub_api_token=HUGGINGFACE_API_KEY,
     task="text-generation",
     model_kwargs={
-        "min_length": 200,
-        "max_length": 2000,
-        "temperature": 0.2,
-        "max_new_tokens": 200,
+        "min_length": 200, # 200
+        "max_length": 1000, # 2000
+        "temperature": 0.4, # 0.2
+        "max_new_tokens": 300, # 200
         "num_return_sequences": 1
     }
 )
