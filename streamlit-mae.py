@@ -15,19 +15,8 @@ from langchain.prompts import PromptTemplate
 
 from langchain.retrievers import BM25Retriever, MergerRetriever
 
-def get_stopwords_array(url):
-    response = requests.get(url)
-    response.raise_for_status()
-
-    stopwords_text = response.text
-    stopwords_array = stopwords_text.split('\n')
-
-    return stopwords_array
-
-stopwords_url = 'https://raw.githubusercontent.com/stopwords-iso/stopwords-en/master/stopwords-en.txt'
-stopwords_array = get_stopwords_array(stopwords_url)
-
 HUGGINGFACE_API_KEY = st.secrets["huggingface_api_key"]
+
 
 llm = HuggingFaceEndpoint(
     endpoint_url="https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct",
@@ -61,6 +50,19 @@ prompt = PromptTemplate(
     input_variables=["context", "question"],
     template=template
 )
+
+@st.cache_resource()
+def get_stopwords_array(url):
+    response = requests.get(url)
+    response.raise_for_status()
+
+    stopwords_text = response.text
+    stopwords_array = stopwords_text.split('\n')
+
+    return stopwords_array
+
+stopwords_url = 'https://raw.githubusercontent.com/stopwords-iso/stopwords-en/master/stopwords-en.txt'
+stopwords_array = get_stopwords_array(stopwords_url)
 
 def custom_preprocessing_func(text: str) -> List[str]:
     
@@ -128,8 +130,6 @@ def generate_response_db(query_text):
         chroma_mini.as_retriever(),
         retriever_bm25
     ]) 
-    # MergerRetriever's get_documents method doesn't do anything special 
-    # Merging just combines all documents without deduplication
     
     qa = RetrievalQA.from_chain_type(
         llm=llm,
@@ -159,15 +159,14 @@ query_text = st.text_input(
 st.caption("To get the best response, make your question as specific as possible.")
 
 # Load embeddings
-documents = generate_documents_from_directory()
 persist_directory = 'db'
+documents = generate_documents_from_directory()
+
 embed_mini = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-# all_mpnet = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
 chroma_mini = load_chroma_db(persist_directory, embed_mini, documents)
 
 should_preprocess = True
 retriever_bm25 = load_bm25(persist_directory, documents, should_preprocess)
-
 
 # Form input and query
 result = []
