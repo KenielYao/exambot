@@ -7,7 +7,7 @@ import streamlit as st
 
 from langchain.document_loaders import DirectoryLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.llms import HuggingFaceEndpoint
+
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.chains import RetrievalQA
@@ -15,24 +15,33 @@ from langchain.prompts import PromptTemplate
 
 from langchain.retrievers import BM25Retriever, MergerRetriever
 
-HUGGINGFACE_API_KEY = st.secrets["huggingface_api_key"]
+# from langchain.llms import HuggingFaceEndpoint
 
+# HUGGINGFACE_API_KEY = st.secrets["huggingface_api_key"]
 
-llm = HuggingFaceEndpoint(
-    endpoint_url="https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct",
-    huggingfacehub_api_token=HUGGINGFACE_API_KEY,
-    task="text-generation",
-    model_kwargs={
-        "temperature": 0.3, # 0.2 - 0.4
-        "repetition_penalty": 1.2, # 1.2 recommended, >1 discourages repetition
-        "encoder_repetition_penalty": 1.2,
-        # new_tokens = tokens used, excluding the prompt and context
-        "min_new_tokens": 50,
-        "max_new_tokens": 250, 
-        "length_penalty": 0, # > 0 = longer, < 0 = shorter
-        "num_return_sequences": 1
-    }
-)
+# llm = HuggingFaceEndpoint(
+#     endpoint_url="https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct",
+#     huggingfacehub_api_token=HUGGINGFACE_API_KEY,
+#     task="text-generation",
+#     model_kwargs={
+#         "temperature": 0.3, # 0.2 - 0.4
+#         "repetition_penalty": 1.2, # 1.2 recommended, >1 discourages repetition
+#         "encoder_repetition_penalty": 1.2,
+#         # new_tokens = tokens used, excluding the prompt and context
+#         "min_new_tokens": 50,
+#         "max_new_tokens": 250, 
+#         "length_penalty": 0, # > 0 = longer, < 0 = shorter
+#         "num_return_sequences": 1
+#     }
+# )
+
+from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI
+
+OPENAI_API_KEY = st.secrets["openai_api_key"]
+
+llm = OpenAI(openai_api_key=OPENAI_API_KEY, model_name="gpt-3.5-turbo")
+
 
 template = """
     Context:{context}
